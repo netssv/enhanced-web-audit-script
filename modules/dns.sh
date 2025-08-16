@@ -254,6 +254,7 @@ check_dns_propagation() {
             echo -e "Propagation status: ${YELLOW}MOSTLY CONSISTENT${NC}"
         else
             echo -e "Propagation status: ${RED}INCONSISTENT${NC}"
+            echo "💡 Multiple IP addresses likely due to load balancing, CDN, or geographic distribution"
         fi
     fi
     
@@ -323,6 +324,13 @@ quick_dns_propagation() {
     elif [[ $consistent == false ]]; then
         local unique_count=$(printf '%s\n' "${results[@]}" | sort -u | wc -l)
         echo -e "${YELLOW}INCONSISTENT${NC} (${#results[@]}/${#servers[@]} regions responding, ${unique_count} unique values)"
+        
+        # Show the unique values for clarity
+        echo "  Different values found:"
+        printf '%s\n' "${results[@]}" | sort -u | while read -r value; do
+            local count=$(printf '%s\n' "${results[@]}" | grep -c "^$value$")
+            echo "    $value ($count regions)"
+        done
     elif [[ ${#results[@]} -ge 2 ]]; then
         echo -e "${YELLOW}Partially propagated${NC} (${#results[@]}/${#servers[@]} regions responding)"
     else
