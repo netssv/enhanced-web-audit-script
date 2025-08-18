@@ -26,6 +26,9 @@ source "$SCRIPT_DIR/modules/dns.sh"
 source "$SCRIPT_DIR/modules/http.sh"
 source "$SCRIPT_DIR/modules/performance.sh"
 source "$SCRIPT_DIR/modules/hosting.sh"
+source "$SCRIPT_DIR/modules/ssl.sh"
+source "$SCRIPT_DIR/modules/dig_tools.sh"
+source "$SCRIPT_DIR/modules/curl_tools.sh"
 
 # Global audit variables
 declare -g DOMAIN=""
@@ -127,6 +130,11 @@ run_quick_audit() {
     # Quick hosting check
     quick_hosting_check "$domain" "$ip" "$url" "$url"
     
+    # Quick SSL check (if HTTPS)
+    if [[ "$url" == https://* ]]; then
+        quick_ssl_check "$url"
+    fi
+    
     # Basic DNS info
     echo "Basic DNS Info:"
     echo "A record: $ip"
@@ -134,6 +142,12 @@ run_quick_audit() {
     # Quick DNS propagation check
     quick_dns_propagation "$domain"
     echo
+    
+    # Quick dig analysis
+    quick_dig_analysis "$domain"
+    
+    # Quick curl analysis  
+    quick_curl_analysis "$url"
     
     # Quick technology detection
     echo "Quick Technology Check:"
@@ -197,11 +211,36 @@ run_full_audit() {
         # DNS propagation check
         echo
         check_dns_propagation "$DOMAIN"
+        
+        # Advanced dig analysis
+        echo
+        advanced_dig_analysis "$DOMAIN"
+        
+        # DNS cache and security analysis
+        analyze_dns_cache "$DOMAIN"
+        analyze_dns_security "$DOMAIN"
     else
         log_warning "dig not available, using basic DNS resolution"
         echo "A record: $IP"
     fi
     end_benchmark "dns_analysis"
+    
+    # SSL Certificate Analysis (if HTTPS)
+    if [[ "$URL" == https://* ]]; then
+        start_benchmark "ssl_analysis"
+        analyze_ssl_certificate "$URL"
+        analyze_ssl_protocols "$(echo "$URL" | sed 's|^https\?://||' | sed 's|/.*||' | sed 's|:.*||')"
+        analyze_certificate_chain "$(echo "$URL" | sed 's|^https\?://||' | sed 's|/.*||' | sed 's|:.*||')"
+        end_benchmark "ssl_analysis"
+    fi
+    
+    # Advanced HTTP Analysis
+    start_benchmark "advanced_http_analysis"
+    advanced_curl_analysis "$URL"
+    analyze_http_protocols "$URL"
+    analyze_content_with_curl "$URL"
+    performance_test_with_curl "$URL"
+    end_benchmark "advanced_http_analysis"
     
     # Performance testing
     start_benchmark "performance_testing"
